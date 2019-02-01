@@ -35,7 +35,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     chairRailHeight: 32,
     useSubRail: true,
     subRailSpacing: 2,
-    subRailThickness: 1,
+    subRailThickness: 1.25,
 
     useWallFrames: true,
     numberOfFrames: 4,
@@ -143,11 +143,20 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
   }
 
+  public orderWindows(): void {
+    // make sure they are in order of distance from left edge
+    this.config.windows.sort(function(a,b) {
+      return a.distanceFromLeft - b.distanceFromLeft;
+    });
+  }
+
   public redraw(): void {
     this.surface.clear();
     this.reset();
 
     window.localStorage.setItem("wpconfig", JSON.stringify(this.config));
+
+    this.orderWindows();
 
     // set the scale based on wall Width
     if (this.config.wallHeight >= this.config.wallWidth) {
@@ -377,14 +386,22 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
   private drawWallFrames(): void {
     // divide the wall into sections if the windows interfere
-    if (this.config.windows.length) {
+    // first check to see if any windows interfere and make a list of just those
+    let interferingWindows = [];
+    for (let i=0; i < this.config.windows.length; i++) {
+      let currentWindow = this.config.windows[i];
+      if ((currentWindow.distanceFromFloor < this.config.chairRailHeight - this.config.chairRailThickness - this.config.subRailSpacing)) {
+        interferingWindows.push(currentWindow);
+      }
+    }
+    if (interferingWindows.length) {
       let frameWidth = ((this.config.wallWidth - (this.interval * (this.config.numberOfFrames + 1))) / this.config.numberOfFrames);
       // draw the frame under the window if possible
       let frameCount;
-      for (let i = 0; i < this.config.windows.length; i++) {
-        let currentWindow = this.config.windows[i];
+      for (let i = 0; i < interferingWindows.length; i++) {
+        let currentWindow = interferingWindows[i];
         // draw modified frame
-        let x1 = i ? (this.config.windows[i - 1].distanceFromLeft + this.config.windows[i - 1].width) : 0;
+        let x1 = i ? (interferingWindows[i - 1].distanceFromLeft + interferingWindows[i - 1].width) : 0;
         let x2 = currentWindow.distanceFromLeft;
         frameCount = Math.round((x2 - x1) / (frameWidth + this.interval)) || 1;
 
@@ -396,7 +413,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
           frameCount = Math.round(currentWindow.width / frameWidth) || 1;
           this.drawWallFrameSection(x2 - this.interval, x2 + currentWindow.width + this.interval, frameCount, currentWindow);
         }
-        if (i === this.config.windows.length - 1) {
+        if (i === interferingWindows.length - 1) {
           // last window, draw from the right edge to the end of the wall
           frameCount = Math.floor((this.config.wallWidth - currentWindow.distanceFromLeft - currentWindow.width) / (frameWidth + this.interval)) || 1;
           this.drawWallFrameSection(currentWindow.distanceFromLeft + currentWindow.width, this.config.wallWidth, frameCount, null);
@@ -411,7 +428,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private drawWallFrameSection(x1, x2, frameCount, window): void {
     let sectionWidth = x2 - x1;
 
-    console.log("section width is: ", sectionWidth);
     if (sectionWidth < (3 * this.config.subRailThickness) + (2 *this.interval)) {
       // if it's a tiny section, don't put a frame
       return;
@@ -423,19 +439,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
 
     // change Y if it is below a window
-    if (window) {
-      console.log("distance from floor is: ", window.distanceFromFloor);
-      console.log("c");
-    }
     if (window && (window.distanceFromFloor < this.config.chairRailHeight)) {
       outsideY1 = this.config.wallHeight - window.distanceFromFloor + this.interval;
       if (this.config.useSubRail && window.distanceFromFloor > this.config.chairRailHeight - this.config.chairRailThickness - this.config.subRailSpacing) {
         // if the window is higher than the subRail, move it below the subrail
         outsideY1 += this.config.subRailSpacing + this.config.subRailThickness;
       }
-      console.log('drawing the wall frame relative to the window:', outsideY1);
-    } else {
-      console.log('drawing the wall frame relative to the chair rail:', outsideY1);
     }
 
     let insideY1 = outsideY1 + this.config.subRailThickness; // subrail is the same thickness as the frames

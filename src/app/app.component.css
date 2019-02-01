@@ -7,3 +7,6 @@ h4 {
 input[type="number"]  {
   height: 25px;
 }
+button {
+  min-width: 27px;
+}
