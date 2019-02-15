@@ -13,17 +13,17 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private surfaceElement: ElementRef;
   private surface: Surface;
 
-  private trimTotals: any = {};
-  private scale: number = 6.1;
-  private picSizeMultiplier = 0.37;
-  private interval: number = 3; // 3" margin around all wall frames
-  private dimensionQueue: any = [];
+  trimTotals: any = {};
+  scale: number = 6.1;
+  picSizeMultiplier = 0.37;
+  interval: number = 3; // 3" margin around all wall frames
+  dimensionQueue: any = [];
 
   // these need to get reset on each redraw
   private xDimensionPos;
   private yDimensionPos;
 
-  private config = {
+  config = {
     showDimensions: false,
 
     wallWidth: 144, // 12'
@@ -55,8 +55,11 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       //   frameWidth: number,
       //   useGrids: boolean
       // }
-    ]
+    ],
 
+    expandWall: false,
+    expandWF: false,
+    expandCR: false
   }
 
 
