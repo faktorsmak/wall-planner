@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { AfterViewInit, OnDestroy } from '@angular/core';
 import { Surface, Path, Text, Group, geometry } from '@progress/kendo-drawing';
 const { Point, transform } = geometry;
@@ -12,6 +12,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   @ViewChild('surface')
   private surfaceElement: ElementRef;
   private surface: Surface;
+
+  private innerWidth = window.innerWidth;
+  private innerHeight = window.innerHeight;
 
   trimTotals: any = {};
   scale: number = 6.1;
@@ -163,9 +166,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     // set the scale based on wall Width
     if (this.config.wallHeight >= this.config.wallWidth) {
-      this.scale = 675 / this.config.wallHeight;
+      this.scale = (0.8 * this.innerHeight) / this.config.wallHeight;
     } else {
-      this.scale = 875 / this.config.wallWidth;
+      this.scale = (0.6 * this.innerWidth) / this.config.wallWidth;
     }
 
     this.drawWall();
@@ -213,7 +216,13 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.drawThing(p);
 
     if (drawDimensions) {
-      this.drawDimension(x1, y1, x2, y2);
+      if (y2 === this.config.wallHeight && (x2-x1) === this.config.wallWidth) {
+        // this.queueVerticalDimension(x2, y1, y2);
+        this.drawDimension(x1, y2, x2, y2);
+        this.drawDimension(x2, y1, x2, y2);
+      } else {
+        this.drawDimension(x1, y1, x2, y2);
+      }
     }
   }
 
@@ -275,9 +284,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.drawBox(x1, y1, x2, y2, true, currentWindow.expand);
 
       // draw distance from the left wall
-      if (!this.config.useChairRail) {
-        this.queueHorizontalDimension(y1 - ((i + 1) * 2), 0, x1);
-      }
+      this.queueHorizontalDimension((y1 + 10) - ((i + 1) * 2), 0, x1);
 
       x1 = currentWindow.distanceFromLeft + currentWindow.frameWidth;
       y1 = this.config.wallHeight - currentWindow.distanceFromFloor - currentWindow.height + currentWindow.frameWidth;
@@ -313,18 +320,22 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     // draw the chair rail sections
     if (this.config.windows.length) {
       // don't draw the chair rail over a window
+      let leftX = 0;
       for (let i = 0; i < this.config.windows.length; i++) {
         let currentWindow = this.config.windows[i];
         if (currentWindow.distanceFromFloor < this.config.chairRailHeight) {
           // don't draw the chair rail where the window is
-          this.drawChairRailSection(i ? (this.config.windows[i - 1].distanceFromLeft + this.config.windows[i - 1].width) : 0, currentWindow.distanceFromLeft);
+          this.drawChairRailSection(leftX, currentWindow.distanceFromLeft);
+          leftX = currentWindow.distanceFromLeft + currentWindow.width;
+          if (i === this.config.windows.length - 1) {
+            // last window, draw from the right edge to the end of the wall
+            this.drawChairRailSection(leftX, this.config.wallWidth);
+          }
         } else {
-          // draw the chair rail where the window is
-          this.drawChairRailSection(i ? (this.config.windows[i - 1].distanceFromLeft + this.config.windows[i - 1].width) : 0, currentWindow.distanceFromLeft + currentWindow.width);
-        }
-        if (i === this.config.windows.length - 1) {
-          // last window, draw from the right edge to the end of the wall
-          this.drawChairRailSection(currentWindow.distanceFromLeft + currentWindow.width, this.config.wallWidth);
+          if (i === this.config.windows.length - 1) {
+            // last window, draw from the right edge to the end of the wall
+            this.drawChairRailSection(leftX, this.config.wallWidth);
+          }
         }
       }
     } else {
@@ -690,6 +701,12 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.drawThing(text);
   }
 
+  @HostListener('window:resize', ['$event'])
+  onResize(event) {
+    this.innerWidth = window.innerWidth;
+    this.innerHeight = window.innerHeight;
+    this.redraw();
+  }
 
   public ngAfterViewInit(): void {
     this.surface = this.createSurface();
