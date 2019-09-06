@@ -152,9 +152,22 @@
     </form>
     <div class="mt-5">
       <h4>Trim Totals</h4>
-      <div>Baseboard: {{ trimTotals.baseboardString }}</div>
-      <div>Chair Rail: {{ trimTotals.chairRailString }}</div>
-      <div>Base Cap: {{ trimTotals.baseCapString }}</div>
+      <div class="mb-2">
+        <select class="form-control" id="maxTrimLength" name="maxTrimLength" [(ngModel)]="config.maxTrimLength"
+        (change)="redraw()">
+          <option value="8">8' Max Board Length</option>
+          <option value="9">9' Max Board Length</option>
+          <option value="10">10' Max Board Length</option>
+          <option value="12">12' Max Board Length</option>
+          <option value="16">16' Max Board Length</option>
+        </select>
+      </div>
+      <div><strong>Baseboard:</strong></div>
+      <div class="ml-2">{{ trimTotals.baseboardString }}</div>
+      <div><strong>Chair Rail:</strong></div>
+      <div class="ml-2">{{ trimTotals.chairRailString }}</div>
+      <div><strong>Base Cap:</strong></div>
+      <div class="ml-2">{{ trimTotals.baseCapString }}</div>
     </div>
   </div>
   <div class="col-md-9">

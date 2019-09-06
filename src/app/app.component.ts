@@ -62,7 +62,8 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     expandWall: false,
     expandWF: false,
-    expandCR: false
+    expandCR: false,
+    maxTrimLength: 8
   }
 
 
@@ -121,32 +122,37 @@ export class AppComponent implements AfterViewInit, OnDestroy {
   private stringifyTrimCounts(): void {
     let feet, inches;
     if (this.trimTotals.chairRail) {
-      feet = Math.floor(this.trimTotals.chairRail/12);
-      inches = this.trimTotals.chairRail % 12;
-      if (inches % 1) {
-        inches = Math.ceil(inches);
-      }
-      this.trimTotals.chairRailString = (feet ? (feet + '\' ') : '') + (inches ? (inches + '"') : '');
+      this.trimTotals.chairRailString = this.getTrimTotalBoards(this.trimTotals.chairRail);
     }
     if (this.trimTotals.baseboard) {
-      feet = Math.floor(this.trimTotals.baseboard / 12);
-      inches = this.trimTotals.baseboard % 12;
-      if (inches % 1) {
-        inches = Math.ceil(inches);
-      }
-      this.trimTotals.baseboardString = (feet ? (feet + '\' ') : '') + (inches ? (inches + '"') : '');
+      this.trimTotals.baseboardString = this.getTrimTotalBoards(this.trimTotals.baseboard);
     }
     if (this.trimTotals.baseCap) {
-      feet = Math.floor(this.trimTotals.baseCap / 12);
-      inches = this.trimTotals.baseCap % 12;
-      if (inches % 1) {
-        inches = Math.ceil(inches);
-      }
-      this.trimTotals.baseCapString = (feet ? (feet + '\' ') : '') + (inches ? (inches + '"') : '');
-      if (feet > 12) {
-        this.trimTotals.baseCapString += ' (' + Math.ceil(feet / 8) + ' -  8\' segments)';
-      }
+      this.trimTotals.baseCapString = this.getTrimTotalBoards(this.trimTotals.baseCap);
     }
+  }
+
+  private getTrimTotalBoards(totalInches) {
+    let feet = Math.floor(totalInches/12);
+    let inches = totalInches % 12;
+    if (inches % 1) {
+      inches = Math.ceil(inches);
+    }
+    let totalString = (feet ? (feet + '\' ') : '') + (inches ? (inches + '"') : '');
+    totalString += ' - (';
+    let wroteFirst = false;
+    if (Math.floor(feet / this.config.maxTrimLength)) {
+      totalString += Math.floor(feet / this.config.maxTrimLength) + ' @ ' + this.config.maxTrimLength + '\'';
+      wroteFirst = true;
+    }
+    if (((totalInches/12) % this.config.maxTrimLength) > 0) {
+      if (wroteFirst) {
+        totalString += ', ';
+      }
+      totalString += '1  @ ' + (((feet+1) % this.config.maxTrimLength) || this.config.maxTrimLength) + '\'';
+    }
+    totalString += ')';
+    return totalString;
   }
 
   public orderWindows(): void {
@@ -217,7 +223,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     if (drawDimensions) {
       if (y2 === this.config.wallHeight && (x2-x1) === this.config.wallWidth) {
-        // this.queueVerticalDimension(x2, y1, y2);
         this.drawDimension(x1, y2, x2, y2);
         this.drawDimension(x2, y1, x2, y2);
       } else {
@@ -271,6 +276,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     let y2 = (this.config.wallHeight);
 
     this.drawBox(x1, y1, x2, y2, false, false);
+    this.trimTotals.baseboard += x2-x1;
   }
 
   private drawWindows(): void {
@@ -360,7 +366,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     if (x2 - x1 !== this.config.wallWidth) {
       this.queueHorizontalDimension(y1 - 5, x1, x2);
     }
-    // this.trimTotals.chairRail = this.config.wallWidth;
+    this.trimTotals.chairRail += x2-x1;
   }
 
   private drawSubRail(): void {
@@ -384,9 +390,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
 
     this.drawDimension(0, this.config.wallHeight - this.config.chairRailHeight, 0, this.config.wallHeight - this.config.chairRailHeight + this.config.chairRailThickness + this.config.subRailSpacing + this.config.subRailThickness);
-
-    // this.drawDimension(0, this.config.wallHeight - this.config.chairRailHeight + this.config.chairRailThickness + this.config.subRailSpacing, 0, this.config.wallHeight);
-    this.trimTotals.baseCap += this.config.wallWidth;
   }
 
   private drawSubRailSection(x1, x2): void {
@@ -395,7 +398,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     this.drawLine(x1, y1, x2, y1);
     this.drawLine(x1, y2, x2, y2);
-    // this.trimTotals.chairRail = this.config.wallWidth;
+    this.trimTotals.baseCap += x2-x1;
   }
 
   private drawWallFrames(): void {
@@ -545,7 +548,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       this.queueHorizontalDimension(this.yDimensionPos, x1, x2);
     } else {
       // draw both dimensions
-      this.queueVerticalDimension(x2, y1, y2);
+      this.queueVerticalDimension(x1, y1, y2);
       this.queueHorizontalDimension(y2, x1, x2);
     }
   }
