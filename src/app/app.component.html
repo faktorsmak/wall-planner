@@ -73,7 +73,12 @@
         <div class="form-check">
           <input class="form-check-input" type="checkbox" [checked]="config.useWallFrames" (change)="config.useWallFrames = !config.useWallFrames; redraw();"
             id="useWallFrames">
-          <label class="form-check-label" for="useWallFrames">Include Wall Frames</label>
+          <label class="form-check-label" for="useWallFrames">Include Lower Frames</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" [checked]="config.useUpperWallFrames" (change)="config.useUpperWallFrames = !config.useUpperWallFrames; redraw();"
+            id="useUpperWallFrames">
+          <label class="form-check-label" for="useUpperWallFrames">Include Upper Frames</label>
         </div>
         <div *ngIf="config.useWallFrames" class="mt-2">
           <div class="form-group">

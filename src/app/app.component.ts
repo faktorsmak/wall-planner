@@ -41,6 +41,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     subRailThickness: 1.25,
 
     useWallFrames: true,
+    useUpperWallFrames: false,
     numberOfFrames: 4,
 
     usePictures: false,
@@ -190,6 +191,10 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
     if (this.config.useWallFrames) {
       this.drawWallFrames();
+    }
+
+    if (this.config.useUpperWallFrames) {
+      this.drawWallFrames(true);
     }
 
     if (this.config.usePictures) {
@@ -401,7 +406,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     this.trimTotals.baseCap += x2-x1;
   }
 
-  private drawWallFrames(): void {
+  private drawWallFrames(isUpperFrames): void {
     // divide the wall into sections if the windows interfere
     // first check to see if any windows interfere and make a list of just those
     let interferingWindows = [];
@@ -424,6 +429,9 @@ export class AppComponent implements AfterViewInit, OnDestroy {
 
         // draw frame(s) before the window/door
         this.drawWallFrameSection(x1, x2, frameCount, null);
+        if (isUpperFrames) {
+          this.drawWallFrameSection(x1, x2, frameCount, null, true);
+        }
 
         // draw frame(s) under the window
         if (!currentWindow.isDoor) {
@@ -441,8 +449,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-
-  private drawWallFrameSection(x1, x2, frameCount, window): void {
+  private drawWallFrameSection(x1, x2, frameCount, window, isUpper): void {
     let sectionWidth = x2 - x1;
 
     if (sectionWidth < (3 * this.config.subRailThickness) + (2 *this.interval)) {
@@ -450,9 +457,14 @@ export class AppComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    let outsideY1 = (this.config.wallHeight - this.config.chairRailHeight + this.config.chairRailThickness + this.interval);
-    if (this.config.useSubRail) {
-      outsideY1 += this.config.subRailSpacing + this.config.subRailThickness;
+    let outsideY1; 
+    if (isUpper) {
+      outsideY1 = this.config.wallHeight - this.interval;
+    } else {
+      outsideY1 = (this.config.wallHeight - this.config.chairRailHeight + this.config.chairRailThickness + this.interval);  
+      if (this.config.useSubRail) {
+        outsideY1 += this.config.subRailSpacing + this.config.subRailThickness;
+      }
     }
 
     // change Y if it is below a window
